@@ -1,6 +1,6 @@
 # About:
 RedditPy aims to be a unofficial open-source python API for reddit, that doesn't require any tokens except your password and username.
-
+Its WIP at the moment, my top priority is adding more features like commenting. If you would like to help, clone the repo, add it and nake a pull request.
 If you like this project, star it!
 
 # RedditPy Documentation
