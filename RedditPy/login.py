@@ -1,15 +1,9 @@
-def login(ua, user,Pass):
-    #
-    # We need to make 2 requests for the log-in. 
-    #   1) Getting the CSRF_TOKEN. 
-    #   2) Sending the POST request
-    import requests
+def login(self, user, pwd):
 
-    session = requests.Session()
     url = "https://www.reddit.com/login"
 
     headers = {
-            "User-Agent": ua, 
+            "User-Agent": self.device["ua"], 
             "Accept": "*/*",
             "Accept-Language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7",
             "Accept-Encoding": "gzip, deflate, br",
@@ -19,28 +13,29 @@ def login(ua, user,Pass):
             "Referer": "https://www.reddit.com/login/?d2x_sso=username_change",
             "Upgrade-Insecure-Requests": "1"
         }
-    try:
-        ############## CSRF ##############
-        csrf = session.get("https://reddit.com/login",headers=headers).text
-        csrf_token = csrf.split('name="csrf_token" value="')[1].split('">')[0]
+    
+    ############## CSRF ##############
+    csrf = self.sess.req("GET", "login", headers=headers)
+    if csrf.status_code > 399:
+        self.error(f"[!] could not get CSRF token for login", csrf)
+        return False
+        
+    csrf_token = csrf.text.split('name="csrf_token" value="')[1].split('">')[0]
+    self.debug("CSRF:", csrf_token)
 
-        ############# POST request #######
-        data = {
-            "csrf_token": csrf_token,
-            "dest": "https://www.reddit.com",
-            "username": user,
-            "password": Pass
-            }
-            
-        r = session.post(url,headers=headers,data=data)
-
-        if r.status_code == 200:
-           # print(r.headers)
-            print(f"[*] Logged in as {user}!")
-            return session
-        else:
-            print(r.status_code)
-            print(r.headers)
-            print(f"[!] could not log in with {user}:{Pass}. Are you sure that the credentials are correct?")
-    except:
-        print(f"[!] could not log in with {user}:{Pass}. Are you sure that the credentials are correct?")
+    ############# POST request #######
+    data = {
+        "csrf_token": csrf_token,
+        "dest": "https://www.reddit.com",
+        "username": user,
+        "password": pwd
+    }
+        
+    r = self.sess.req("POST", "login", headers=headers,data=data)
+    if r.status_code == 200:
+        self.info(f"[*] Logged in as {user}!")
+        self.debug(r.cookies)
+    else:
+        self.debug(r.status_code)
+        self.debug(r.headers)
+        self.error(f"[!] could not log in with {user}:{pwd}. Are you sure that the credentials are correct?")

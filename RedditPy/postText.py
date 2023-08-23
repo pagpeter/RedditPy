@@ -1,33 +1,32 @@
-def post_text(ua, session,subreddit,title,body,NSFW,Spoiler,OC):
-	import requests
+def post_text(self, subreddit, title, body, NSFW, Spoiler, OC):
 
 	if subreddit.find("r/") != -1:
 		subreddit = subreddit.split("r/")[1]
 
 	############################### REQUEST 1: TOKENS AND STUFF
 	headers = {
-		"User-Agent": ua
+		"User-Agent": self.device["ua"]
 	}
 	try:
-	url = "https://www.reddit.com/r/"+subreddit+"/submit"
-	PostData = session.get(url,headers=headers,timeout=5).text
+		path = f"r/{subreddit}/submit"
+		res = self.sess.req("GET", path, headers=headers).text
 
-	auth = PostData.split('"accessToken":"')[1].split('"')[0]
+		auth = res.split('"accessToken":"')[1].split('"')[0]
 
-	xRedditSession = PostData.split('"sessionTracker":"')[1].split('"')[0]
+		xRedditSession = res.split('"sessionTracker":"')[1].split('"')[0]
 
-	loid = PostData.split('"loid":"')[1].split('"')[0]
-	loidCreated = PostData.split('"loidCreated":"')[1].split('"')[0]
-	blob = PostData.split('"blob":"')[1].split('"')[0]
-	version = "2"
+		loid = res.split('"loid":"')[1].split('"')[0]
+		loidCreated = res.split('"loidCreated":"')[1].split('"')[0]
+		blob = res.split('"blob":"')[1].split('"')[0]
+		version = "2"
 
-	#getting the 3 tokens we need from the sourcecode of the site. Will use bs4 later, but this works so far
-	xRedditSession = PostData.split('"sessionTracker":"')[1].split('"')[0]
-	authorization = "Bearer "+auth
-	xRedditLoid = loid + "." + version + "." + loidCreated + "." + blob
+		#getting the 3 tokens we need from the sourcecode of the site. Will use bs4 later, but this works so far
+		xRedditSession = res.split('"sessionTracker":"')[1].split('"')[0]
+		authorization = "Bearer "+auth
+		xRedditLoid = loid + "." + version + "." + loidCreated + "." + blob
 
 	except:
-		print("[!] Request 1 failed. Does the link exist?")
+		self.error("[!] Request 1 failed. Does the link exist?")
 		return
 
 	############################### REQUEST 2: SUBMITTING THE POST
@@ -49,7 +48,7 @@ def post_text(ua, session,subreddit,title,body,NSFW,Spoiler,OC):
 			"sec-fetch-dest": "empty",
 			"sec-fetch-mode": "cors",
 			"sec-fetch-site": "same-site",
-			"user-agent": ua,
+			"user-agent": self.device["ua"],
 			"x-reddit-loid": xRedditLoid,
 			"x-reddit-session": xRedditSession
 		}
@@ -71,15 +70,15 @@ def post_text(ua, session,subreddit,title,body,NSFW,Spoiler,OC):
 		"validate_on_submit": "true"
 			}
 		
-		final = session.post(postUrl,headers=headers,data=data,timeout=5)
+		final = self.sess.req("POST", postUrl, headers=headers, data=data)
 		try:
-			url = final.json()["json"]["data"]["url"]
-			print(f"[*] post posted successfull, url={url}")
+			path = final.json()["json"]["data"]["url"]
+			self.info(f"[*] post posted successfull, url={path}")
 		except:
-			print("[*] something failed. Debug info:")
-			print(final.json())
+			self.error("[*] something failed (post_text())")
+			self.debug(final.json())
 
 	except:
-		print("[!] Request 2 failed. Is the data correct?")
+		self.error("[!] Request 2 failed. Is the data correct?")
 
 

@@ -1,39 +1,57 @@
-class RedditPy(object):
-	def __init__(self, name,Pass,Proxies=False): # init. Log-In with a Username and password
-		super(RedditPy, self).__init__()
+from RedditPy.login import login
+from RedditPy.vote import vote
+from RedditPy.sendMessage import send_message
+from RedditPy.postText import post_text
+# from RedditPy.comment import comment
+from RedditPy.subscribe import subscribe
+from RedditPy.request import Session
 
-		with open("RedditPy/media/UA.txt","r") as f: agents = f.read().split("\n")
-		import random
-		self.UA = random.choice(agents)
+class RedditPy():
+	def __init__(self, user, pwd, proxy={}, timeout=8, log=[]): 
+		self.device = {
+			"clientHint": '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"',
+			"clientPlatform": '"macOS"',
+        	"language": "en-US",
+			"ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+		} 
 
-		from RedditPy.login import login
-		Pass = Pass.replace("u/", "") # you never know if someone is doing it wrong
-		self.session = login(self.UA, name,Pass) # storing the logged-in session.
+		self.proxy = proxy
+		self.sess = Session(proxy, timeout)
+		self.user = user 
+		self.pwd = pwd 
+		self.log = log
 
-		if Proxies == True: # get proxyes
-			import requests
-			proxies = requests.get("https://api.proxyscrape.com/?request=getproxies&proxytype=http", allow_redirects=True).text.split("\r\n")
-            #print("[*] Downloaded proxies")
-			self.session.proxies = {"http": random.choice(proxies)}
+	def get_session(self):
+		return self.sess._sess.cookies["session"]
 
-	def vote(self,url,Dir="1"):
-		from RedditPy.vote import vote
-		vote(self.UA, self.session,url,Dir)
+	def info(self, *kwargs):
+		if "info" not in self.log: return
+		print("[INFO]", *kwargs)
 
-	def send_message(self,recipient,title,body):
-		from RedditPy.sendMessage import send_message
-		send_message(self.UA, self.session,recipient,title,body)
+	def error(self, *kwargs):
+		if "error" not in self.log: return
+		print("[ERROR]", *kwargs)
 
-	def post_text(self,subreddit,title,body,NSFW=False,Spoiler=False,OC=False):
-		from RedditPy.postText import post_text
-		post_text(self.UA, self.session,subreddit,title,body,NSFW,Spoiler,OC)
+	def debug(self, *kwargs):
+		if "debug" not in self.log: return
+		print("[DEBUG]", *kwargs)
 
-	def post_comment(self,url,body):
-		from RedditPy.comment import comment
-		comment(self.UA, self.session,url, body)
+	def login(self):
+		login(self, self.user, self.pwd) 
 
-	def subscribe(self,user,Type="sub",unsub=False):
-		from RedditPy.subscribe import subscribe
-		subscribe(self.UA, self.session, user, Type, unsub)
+	def vote(self, url, direction="1"):
+		vote(self, url, direction)
+
+	def send_message(self, recipient, title, body):
+		send_message(self, recipient, title, body)
+
+	def post_text(self, subreddit, title, body, NSFW=False, Spoiler=False, OC=False):
+		post_text(self, subreddit, title, body, NSFW, Spoiler, OC)
+
+	# def post_comment(self,url,body):
+	# 	comment(self.UA, self.session,url, body)
+
+	def subscribe(self, user, actionType="sub", unsub=False):
+		subscribe(self, user, actionType, unsub)
 
 		
